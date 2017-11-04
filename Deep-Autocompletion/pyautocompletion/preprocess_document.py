@@ -56,12 +56,25 @@ class PreprocessDocument(object):
             sentence_token_list.append(token_list)
             length_list.append(len(token_list))
         max_length = max(length_list)
+
+        feature_list_list = []
+        class_list = []
         for i in range(len(sentence_token_list)):
             while len(sentence_token_list[i]) < max_length:
-                sentence_token_list[i].append("<EOC>")
+                sentence_token_list[i].append(None)
+            for j in range(1, len(sentence_token_list[i])):
+                feature_list = sentence_token_list[i][:j-1]
+                feature_list.extend([None] * len(sentence_token_list[i][j-1:]))
+                feature_list_list.append(feature_list)
+                class_list.append(sentence_token_list[i][j])
+
         sentence_token_arr = np.array(sentence_token_list)
         self.__word_vectorizable.fit(sentence_token_arr)
+        feature_arr = np.array(feature_list_list)
+        class_arr = np.array(class_list)
+        class_arr = class_arr.reshape(-1, 1)
         def vectorize(elm_list):
             return self.__word_vectorizable.vectorize(elm_list)
-        vector_arr = np.apply_along_axis(vectorize, 1, sentence_token_arr)
-        return vector_arr
+        feature_vector_arr = np.apply_along_axis(vectorize, 1, feature_arr)
+        class_vector_arr = np.apply_along_axis(vectorize, 1, class_arr)
+        return feature_vector_arr, class_vector_arr

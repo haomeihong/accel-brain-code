@@ -73,9 +73,9 @@ class Word2VecVectorizer(WordVectorizerable):
         '''
         def model(v):
             if v is None:
-                return None
+                return np.array([0.0] * self.__dimention)
             elif v in self.__model:
                 return self.__model[v]
             else:
-                return False
+                return np.array([0.0] * self.__dimention)
         return np.array([model(v) for v in token_list])

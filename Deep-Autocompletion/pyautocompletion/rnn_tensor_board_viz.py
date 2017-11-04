@@ -119,8 +119,8 @@ class RnnTensorBoardViz(metaclass=ABCMeta):
             cell = self.build_rnn_cell(cell_units_num)
             outputs, states = self.construct_rnn(cell, x)
             w, b, logits, p = self.output_layer_var(cell_units_num, class_num, outputs)
-            loss, opt_algo = self.optimizer_function(t, logits, class_num, learning_rate)
-            accuracy = self.evaluator_function(p, t, class_num)
+            loss, opt_algo = self.optimizer_function(t, logits, learning_rate)
+            accuracy = self.evaluator_function(p, t)
 
             tf.summary.scalar(self.scalar_summary_dict["loss"], loss)
             tf.summary.scalar(self.scalar_summary_dict["accuracy"], accuracy)
@@ -151,7 +151,7 @@ class RnnTensorBoardViz(metaclass=ABCMeta):
     def input_layer_pf(self, x_shape, t_shape):
         with tf.name_scope(self.name_scope_dict["placeholder"]):
             x = tf.placeholder(tf.float32, list(x_shape), name=self.name_scope_dict["placeholder"] + "__x")
-            t = tf.placeholder(tf.int32, list(t_shape), name=self.name_scope_dict["placeholder"] + "__target")
+            t = tf.placeholder(tf.float32, list(t_shape), name=self.name_scope_dict["placeholder"] + "__target")
 
         return (x, t)
 
@@ -173,7 +173,6 @@ class RnnTensorBoardViz(metaclass=ABCMeta):
         with tf.name_scope(self.name_scope_dict["construct_rnn"]):
             outputs, states = tf.nn.dynamic_rnn(cell=cell, inputs=x, dtype=tf.float32, time_major=False)
             outputs = tf.transpose(outputs, perm=[1, 0, 2])
-
         return (outputs, states)
 
     def output_layer_var(self, cell_units_num, class_num, outputs):
@@ -188,20 +187,22 @@ class RnnTensorBoardViz(metaclass=ABCMeta):
 
         return (w, b, logits, p)
 
-    def optimizer_function(self, t, logits, class_num, learning_rate):
+    def optimizer_function(self, t, logits, learning_rate):
         with tf.name_scope(self.name_scope_dict["optimizer"]):
-            t_one_hot = tf.one_hot(t, depth=class_num, dtype=tf.float32)
-            cross_entropy = tf.nn.softmax_cross_entropy_with_logits(labels=t_one_hot, logits=logits)
+            cross_entropy = tf.nn.softmax_cross_entropy_with_logits(labels=t, logits=logits)
             loss = tf.reduce_mean(cross_entropy, name=self.name_scope_dict["optimizer"] + "__loss")
             opt_algo = tf.train.AdamOptimizer(learning_rate).minimize(loss)
 
         return (loss, opt_algo)
 
-    def evaluator_function(self, p, t, class_num):
+    def evaluator_function(self, p, t):
         with tf.name_scope(self.name_scope_dict["evaluator"]):
-            t_one_hot = tf.one_hot(t, depth=class_num, dtype=tf.float32)
-            correct_prediction = tf.equal(tf.argmax(p, 1), tf.argmax(t_one_hot, 1))
-            accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32), name=self.name_scope_dict["evaluator"] + "__accuracy")
+            total_error = tf.reduce_sum(tf.square(tf.subtract(t, tf.reduce_mean(t))))
+            unexplained_error = tf.reduce_sum(tf.square(tf.subtract(t, p)))
+
+        with tf.name_scope(self.name_scope_dict["evaluator"] + "__accuracy"):
+            accuracy = tf.subtract(1.0, tf.divide(unexplained_error, total_error))
+
         return accuracy
 
     @abstractmethod
