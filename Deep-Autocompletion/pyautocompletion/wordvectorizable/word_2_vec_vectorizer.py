@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
-from word_vectolizerable import WordVectolizerable
+from pyautocompletion.word_vectorizerable import WordVectorizerable
 from gensim.models import word2vec
+import numpy as np
 
 
-class Word2VecVectorizer(WordVectolizerable):
+class Word2VecVectorizer(WordVectorizerable):
     '''
     Word2Vec Vectorizer.
     '''
@@ -60,7 +61,7 @@ class Word2VecVectorizer(WordVectolizerable):
         data = word2vec.Text8Corpus(self.__path_to_corpus)
         self.__model = word2vec.Word2Vec(data, size=self.__dimention)
 
-    def vectorlize(self, token_list):
+    def vectorize(self, token_list):
         '''
         Vectorize.
 
@@ -71,8 +72,10 @@ class Word2VecVectorizer(WordVectolizerable):
             np.array([vectors])
         '''
         def model(v):
-            if v in self.__model:
+            if v is None:
+                return None
+            elif v in self.__model:
                 return self.__model[v]
             else:
-                return None
-        return np.array([model[v] for v in token_list])
+                return False
+        return np.array([model(v) for v in token_list])

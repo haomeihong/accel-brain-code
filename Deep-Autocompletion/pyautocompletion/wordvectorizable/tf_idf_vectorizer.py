@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
-from word_vectolizerable import WordVectolizerable
+from pyautocompletion.word_vectolizerable import WordVectolizerable
 
 
-class TfIdfVectorizer(WordVectolizerable):
+class TfIdfVectorizer(WordVectorizerable):
     '''
     Tf-Idf Vectorizer.
     '''

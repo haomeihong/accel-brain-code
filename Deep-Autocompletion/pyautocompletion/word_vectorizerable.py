@@ -18,7 +18,7 @@ class WordVectorizerable(metaclass=ABCMeta):
         raise NotImplementedError("This method must be implemented.")
 
     @abstractmethod
-    def vectorlize(self, token_list):
+    def vectorize(self, token_list):
         '''
         Vectorize.
 

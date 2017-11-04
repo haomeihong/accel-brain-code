@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from pysummarization.nlp_base import NlpBase
-from word_vectolizerable import WordVectolizerable
+from pyautocompletion.word_vectorizerable import WordVectorizerable
 import numpy as np
 
 
@@ -12,25 +12,25 @@ class PreprocessDocument(object):
     # The object of `NlpBase`.
     __nlp_base = None
     # The object of `WordVectolizerable`.
-    __word_vectorlizable = None
+    __word_vectorizable = None
     
-    def __init__(self, nlp_base, word_vectorlizable):
+    def __init__(self, nlp_base, word_vectorizable):
         '''
         Initialize.
         
         Args:
             nlp_base:           The object of `NlpBase`.
-            word_vectorlizable: The object of `WordVectolizerable`.
+            word_vectorizable:  The object of `WordVectorizerable`.
         '''
         if isinstance(nlp_base, NlpBase):
             self.__nlp_base = nlp_base
         else:
             raise TypeError("The type of `nlp_base` must be `NlpBase`.")
 
-        if isinstance(word_vectorlizable, WordVectolizerable):
-            self.__word_vectorlizable = word_vectorlizable
+        if isinstance(word_vectorizable, WordVectorizerable):
+            self.__word_vectorizable = word_vectorizable
         else:
-            raise TypeError("The type of `word_vectorlizable` must be `WordVectolizerable`.")
+            raise TypeError("The type of `word_vectorizable` must be `WordVectorizerable`.")
 
     def preprocess(self, document):
         '''
@@ -60,18 +60,8 @@ class PreprocessDocument(object):
             while len(sentence_token_list[i]) < max_length:
                 sentence_token_list[i].append("<EOC>")
         sentence_token_arr = np.array(sentence_token_list)
-        self.__vectorlizable.fit(sentence_token_arr)
-        def vectorlize(elm_list):
-            return self.__vectorlizable.vectorlize(elm_list)
-        vector_arr = np.apply_along_axis(vectorlize, 1, sentence_token_arr)
+        self.__word_vectorizable.fit(sentence_token_arr)
+        def vectorize(elm_list):
+            return self.__word_vectorizable.vectorize(elm_list)
+        vector_arr = np.apply_along_axis(vectorize, 1, sentence_token_arr)
         return vector_arr
-
-if __name__ == "__main__":
-    from pysummarization.nlpbase.auto_abstractor import AutoAbstractor
-    import sys
-    nlp_base = AutoAbstractor()
-    preprocess_document = PreprocessDocument(nlp_base=nlp_base)
-    document = sys.argv[1]
-    print(document)
-    sentence_token_arr = preprocess_document.preprocess(document)
-    print(sentence_token_arr)

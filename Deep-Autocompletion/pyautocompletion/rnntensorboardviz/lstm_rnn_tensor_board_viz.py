@@ -1,6 +1,6 @@
 import tensorflow as tf
 import numpy as np
-from rnn_tensor_board_viz import RnnTensorBoardViz
+from pyautocompletion.rnn_tensor_board_viz import RnnTensorBoardViz
 from tensorflow.contrib import rnn
 
 
