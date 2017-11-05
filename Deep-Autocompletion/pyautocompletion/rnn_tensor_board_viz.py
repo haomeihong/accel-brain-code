@@ -52,6 +52,7 @@ class RnnTensorBoardViz(metaclass=ABCMeta):
     scalar_summary_dict = {
         "loss": "Loss",
         "accuracy": "Accuracy",
+        "similarity": "Similarity",
         "weights": "Weights",
         "biases": "Biases"
     }
@@ -120,10 +121,11 @@ class RnnTensorBoardViz(metaclass=ABCMeta):
             outputs, states = self.construct_rnn(cell, x)
             w, b, logits, p = self.output_layer_var(cell_units_num, class_num, outputs)
             loss, opt_algo = self.optimizer_function(t, logits, learning_rate)
-            accuracy = self.evaluator_function(p, t)
+            accuracy, similarity = self.evaluator_function(p, t)
 
             tf.summary.scalar(self.scalar_summary_dict["loss"], loss)
             tf.summary.scalar(self.scalar_summary_dict["accuracy"], accuracy)
+            tf.summary.scalar(self.scalar_summary_dict["similarity"], similarity)
             tf.summary.histogram(self.scalar_summary_dict["weights"], w)
             tf.summary.histogram(self.scalar_summary_dict["biases"], b)
 
@@ -133,6 +135,7 @@ class RnnTensorBoardViz(metaclass=ABCMeta):
             self.opt_algo = opt_algo
             self.loss = loss
             self.accuracy = accuracy
+            self.similarity = similarity
             self.__start_session()
 
     def __start_session(self):
@@ -166,7 +169,7 @@ class RnnTensorBoardViz(metaclass=ABCMeta):
         '''
         
         with tf.name_scope(self.name_scope_dict["cell"]):
-            cell = rnn.BasicRNNCell(num_units=cell_units_num, activation=tf.nn.tanh)
+            cell = rnn.BasicRNNCell(num_units=cell_units_num, activation=tf.nn.softmax)
         return cell
 
     def construct_rnn(self, cell, x):
@@ -183,6 +186,7 @@ class RnnTensorBoardViz(metaclass=ABCMeta):
             )
             b = tf.Variable(tf.zeros([class_num]), name=self.name_scope_dict["output_layer"] + "__biases")
             logits = tf.matmul(outputs[-1], w) + b
+            logits = tf.reshape(logits, [tf.shape(logits)[0], 1, class_num])
             p = tf.nn.softmax(logits, name=self.name_scope_dict["output_layer"] + "__activation")
 
         return (w, b, logits, p)
@@ -203,7 +207,10 @@ class RnnTensorBoardViz(metaclass=ABCMeta):
         with tf.name_scope(self.name_scope_dict["evaluator"] + "__accuracy"):
             accuracy = tf.subtract(1.0, tf.divide(unexplained_error, total_error))
 
-        return accuracy
+        with tf.name_scope(self.name_scope_dict["evaluator"] + "__similarity"):
+            loss = tf.losses.cosine_distance(labels=tf.nn.l2_normalize(t, 2), predictions=tf.nn.l2_normalize(p, 2), dim=2)
+            similarity = 1 - loss
+        return (accuracy, similarity)
 
     @abstractmethod
     def session_run(self, training_num, batch_size, summary_freq):

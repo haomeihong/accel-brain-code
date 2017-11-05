@@ -32,7 +32,7 @@ class PreprocessDocument(object):
         else:
             raise TypeError("The type of `word_vectorizable` must be `WordVectorizerable`.")
 
-    def preprocess(self, document, max_length=100):
+    def preprocess(self, document, max_length=None):
         '''
         Preprocess.
         
@@ -55,19 +55,22 @@ class PreprocessDocument(object):
             self.__nlp_base.tokenize(sentence)
             token_list = self.__nlp_base.token
             sentence_token_list.append(token_list)
+            length_list.append(len(token_list))
 
-        print("Max Len: " + str(max_length))
+        if max_length is None:
+            max_length = max(length_list)
 
         feature_list_list = []
         class_list = []
         for i in range(len(sentence_token_list)):
             while len(sentence_token_list[i]) < max_length:
                 sentence_token_list[i].append(None)
-            for j in range(1, len(sentence_token_list[i])):
-                feature_list = sentence_token_list[i][:j-1]
-                feature_list.extend([None] * len(sentence_token_list[i][j-1:]))
-                feature_list_list.append(feature_list)
-                class_list.append(sentence_token_list[i][j])
+            for j in range(2, len(sentence_token_list[i])):
+                if sentence_token_list[i][j] is not None:
+                    feature_list = sentence_token_list[i][:j-1]
+                    feature_list.extend([None] * len(sentence_token_list[i][j-1:]))
+                    feature_list_list.append(feature_list)
+                    class_list.append(sentence_token_list[i][j])
 
         sentence_token_arr = np.array(sentence_token_list)
         self.__word_vectorizable.fit(sentence_token_arr)
