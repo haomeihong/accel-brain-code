@@ -30,7 +30,7 @@ def Main(document, dimention=10):
         t_shape=(None, class_arr.shape[1], class_arr.shape[2]),
         class_num=dimention,
         learning_rate=0.0001,
-        cell_units_num=5,
+        cell_units_num=10,
         log_dir="/tmp/tensorboard_lstm_rnn"
     )
     rnn_tensor_board_viz.preprocess(feature_arr, class_arr)
