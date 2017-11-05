@@ -120,7 +120,7 @@ class RnnTensorBoardViz(metaclass=ABCMeta):
             cell = self.build_rnn_cell(cell_units_num)
             outputs, states = self.construct_rnn(cell, x)
             w, b, logits, p = self.output_layer_var(cell_units_num, class_num, outputs)
-            loss, opt_algo = self.optimizer_function(t, logits, learning_rate)
+            loss, opt_algo = self.optimizer_function(t, p, logits, learning_rate)
             accuracy, similarity = self.evaluator_function(p, t)
 
             tf.summary.scalar(self.scalar_summary_dict["loss"], loss)
@@ -169,7 +169,7 @@ class RnnTensorBoardViz(metaclass=ABCMeta):
         '''
         
         with tf.name_scope(self.name_scope_dict["cell"]):
-            cell = rnn.BasicRNNCell(num_units=cell_units_num, activation=tf.nn.softmax)
+            cell = rnn.BasicRNNCell(num_units=cell_units_num, activation=tf.nn.softsign)
         return cell
 
     def construct_rnn(self, cell, x):
@@ -187,14 +187,16 @@ class RnnTensorBoardViz(metaclass=ABCMeta):
             b = tf.Variable(tf.zeros([class_num]), name=self.name_scope_dict["output_layer"] + "__biases")
             logits = tf.matmul(outputs[-1], w) + b
             logits = tf.reshape(logits, [tf.shape(logits)[0], 1, class_num])
-            p = tf.nn.softmax(logits, name=self.name_scope_dict["output_layer"] + "__activation")
+            #p = tf.nn.softmax(logits, name=self.name_scope_dict["output_layer"] + "__activation")
+            p = tf.nn.softsign(logits, name=self.name_scope_dict["output_layer"] + "__activation")
 
         return (w, b, logits, p)
 
-    def optimizer_function(self, t, logits, learning_rate):
+    def optimizer_function(self, t, p, logits, learning_rate):
         with tf.name_scope(self.name_scope_dict["optimizer"]):
-            cross_entropy = tf.nn.softmax_cross_entropy_with_logits(labels=t, logits=logits)
-            loss = tf.reduce_mean(cross_entropy, name=self.name_scope_dict["optimizer"] + "__loss")
+            #cross_entropy = tf.nn.softmax_cross_entropy_with_logits(labels=t, logits=logits)
+            #loss = tf.reduce_mean(cross_entropy, name=self.name_scope_dict["optimizer"] + "__loss")
+            loss = tf.losses.cosine_distance(labels=tf.nn.l2_normalize(t, 2), predictions=tf.nn.l2_normalize(p, 2), dim=2)
             opt_algo = tf.train.AdamOptimizer(learning_rate).minimize(loss)
 
         return (loss, opt_algo)
