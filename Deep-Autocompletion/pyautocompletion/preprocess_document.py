@@ -32,12 +32,13 @@ class PreprocessDocument(object):
         else:
             raise TypeError("The type of `word_vectorizable` must be `WordVectorizerable`.")
 
-    def preprocess(self, document):
+    def preprocess(self, document, max_length=100):
         '''
         Preprocess.
         
         Args:
             document:    document.
+            max_length:  Max length of one sentence.
         
         Returns:
             np.array(
@@ -54,8 +55,8 @@ class PreprocessDocument(object):
             self.__nlp_base.tokenize(sentence)
             token_list = self.__nlp_base.token
             sentence_token_list.append(token_list)
-            length_list.append(len(token_list))
-        max_length = max(length_list)
+
+        print("Max Len: " + str(max_length))
 
         feature_list_list = []
         class_list = []

@@ -56,7 +56,9 @@ class Word2VecVectorizer(WordVectorizerable):
             sentence_token_arr:    np.ndarray of tokens.
         '''
         if self.__generate_corpus_flag is True:
-            pass
+            document = " ".join([v for v in sentence_token_arr.reshape(1, -1).tolist()[0] if v is not None])
+            with open(self.__path_to_corpus, "w") as f:
+                f.write(document)
 
         data = word2vec.Text8Corpus(self.__path_to_corpus)
         self.__model = word2vec.Word2Vec(data, size=self.__dimention)

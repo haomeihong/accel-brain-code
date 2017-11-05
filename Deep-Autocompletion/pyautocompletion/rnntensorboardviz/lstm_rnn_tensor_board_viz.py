@@ -51,6 +51,9 @@ class LSTMRnnTensorBoardViz(RnnTensorBoardViz):
             batch_size:    batch size.
             summary_freq:  Frequency of tf.summary.FileWriter().add_summary().
         '''
+        from numpy import dot
+        from numpy.linalg import norm
+
         i = 0
         for _ in range(training_num):
             i += 1
@@ -67,4 +70,7 @@ class LSTMRnnTensorBoardViz(RnnTensorBoardViz):
                     }
                 )
                 self.writer.add_summary(summary, i)
+                pred_arr = self.sess.run(self.opt_algo, feed_dict={self.x: self.test_x_arr})
+                cos_sim = dot(self.test_y_arr, pred_arr)/(norm(self.test_y_arr)*norm(pred_arr))
                 print("Step: " + str(i) + " Loss: " + str(loss) + " Accuracy: " + str(accuracy))
+                print("Cos Sim: " + str(cos_sim))
