@@ -5,7 +5,7 @@ from pysummarization.web_scraping import WebScraping
 from pyautocompletion.wordvectorizable.word_2_vec_vectorizer import Word2VecVectorizer
 from pyautocompletion.preprocess_document import PreprocessDocument
 from pyautocompletion.rnntensorboardviz.lstm_rnn_tensor_board_viz import LSTMRnnTensorBoardViz
-
+from pyautocompletion.rnntensorboardviz.lstmrnntensorboardviz.deep_lstm_rnn_tensor_board_viz import DeepLSTMRnnTensorBoardViz
 
 def Main(document, dimention=10):
     '''
@@ -24,7 +24,8 @@ def Main(document, dimention=10):
         word_vectorizable=word_vectorizable
     )
     feature_arr, class_arr = preprocess_document.preprocess(document)
-    rnn_tensor_board_viz = LSTMRnnTensorBoardViz()
+    rnn_tensor_board_viz = DeepLSTMRnnTensorBoardViz()
+    rnn_tensor_board_viz.lstm_layers = 3
     rnn_tensor_board_viz.initialize(
         x_shape=(None, feature_arr.shape[1], feature_arr.shape[2]),
         t_shape=(None, class_arr.shape[1], class_arr.shape[2]),

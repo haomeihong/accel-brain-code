@@ -22,7 +22,7 @@ class LSTMRnnTensorBoardViz(RnnTensorBoardViz):
         with tf.name_scope(self.name_scope_dict["cell"]):
             cell = rnn.BasicLSTMCell(
                 num_units=cell_units_num,
-                activation=tf.nn.tanh
+                activation=tf.nn.softsign
             )
         return cell
 
