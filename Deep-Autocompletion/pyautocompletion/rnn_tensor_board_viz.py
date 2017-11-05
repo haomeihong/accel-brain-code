@@ -57,6 +57,9 @@ class RnnTensorBoardViz(metaclass=ABCMeta):
         "biases": "Biases"
     }
 
+    # Start session is end or not.
+    __start_session_flag = False
+
     def initialize(
         self,
         x_shape,
@@ -150,6 +153,7 @@ class RnnTensorBoardViz(metaclass=ABCMeta):
         self.sess = sess
         self.summary = summary
         self.writer = writer
+        self.__start_session_flag = True
 
     def input_layer_pf(self, x_shape, t_shape):
         with tf.name_scope(self.name_scope_dict["placeholder"]):
@@ -225,3 +229,12 @@ class RnnTensorBoardViz(metaclass=ABCMeta):
             summary_freq:  Frequency of tf.summary.FileWriter().add_summary().
         '''
         raise NotImplementedError("This method must be implemented.")
+
+    def predict(self, x_arr):
+        if self.__start_session_flag is False:
+            with tf.Graph().as_default():
+                self.__build_model()
+                self.__start_session()
+
+        pred_arr = self.sess.run(self.p, feed_dict={self.x: x_arr})
+        return pred_arr

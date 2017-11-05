@@ -81,4 +81,4 @@ class PreprocessDocument(object):
             return self.__word_vectorizable.vectorize(elm_list)
         feature_vector_arr = np.apply_along_axis(vectorize, 1, feature_arr)
         class_vector_arr = np.apply_along_axis(vectorize, 1, class_arr)
-        return feature_vector_arr, class_vector_arr
+        return (feature_arr, class_arr, feature_vector_arr, class_vector_arr)
