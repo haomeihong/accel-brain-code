@@ -8,7 +8,7 @@ from pyautocompletion.rnntensorboardviz.lstm_rnn_tensor_board_viz import LSTMRnn
 from pyautocompletion.rnntensorboardviz.lstmrnntensorboardviz.deep_lstm_rnn_tensor_board_viz import DeepLSTMRnnTensorBoardViz
 import numpy as np
 
-def Main(document, dimention=10, batch_size=50):
+def Main(document, dimention=10, batch_size=100):
     '''
     Entry Point.
     '''
@@ -38,36 +38,54 @@ def Main(document, dimention=10, batch_size=50):
     rnn_tensor_board_viz.preprocess(feature_vector_arr, class_vector_arr)
     rnn_tensor_board_viz.session_run(
         batch_size=batch_size,
-        training_num=100,
+        training_num=1000,
         summary_freq=batch_size
     )
-    rand_index = np.random.choice(feature_vector_arr.shape[0], size=1)
-    test_feature_arr = feature_arr[rand_index]
-    test_feature_vector_arr = feature_vector_arr[rand_index]
 
-    pred_class_vector_arr = rnn_tensor_board_viz.predict(test_feature_vector_arr)
-    print(pred_class_vector_arr.shape)
-    print(class_vector_arr.shape)
     from scipy.spatial.distance import cosine
     import pandas as pd
 
-    def apply_cosine(value_arr):
-        print(value_arr)
-        print(pred_class_vector_arr[0][0])
-        return cosine(pred_class_vector_arr[0][0], value_arr)
+    
+    class ApplyCosine(object):
+        __pred_class_vector_arr = None
+        
+        def __init__(self, pred_class_vector_arr):
+            print(pred_class_vector_arr[0][0])
+            self.__pred_class_vector_arr = pred_class_vector_arr
+        
+        def apply_method(self, value_arr):
+            return cosine(self.__pred_class_vector_arr[0][0], value_arr)
 
-    cosine_arr = np.apply_along_axis(apply_cosine, 1, np.transpose(class_vector_arr, (2, 0, 1)))
-    print(cosine_arr)
-    cosine_df = pd.DataFrame(cosine_arr, columns=["similary"])
-    test_class_df = pd.DataFrame(class_arr, columns=["class"])
-    test_class_df = pd.concat([test_class_df, cosine_df], axis=1)
-    test_class_df = test_class_df.sort_values(by=["similary"], ascending=False)
-    max_sim_class = test_class_df.iloc[0]["class"]
-    test_feature_list = test_feature_arr.tolist()
+    for _ in range(10):
+        rand_index = np.random.choice(feature_vector_arr.shape[0], size=1)
+        test_feature_arr = feature_arr[rand_index]
+        test_feature_vector_arr = feature_vector_arr[rand_index]
 
-    print(" ".join(test_feature_list))
-    print(" => " + str(max_sim_class))
+        pred_class_vector_arr = rnn_tensor_board_viz.predict(test_feature_vector_arr)
+        if pred_class_vector_arr[0][0].sum() == 0:
+            continue
 
+        apply_cosine = ApplyCosine(pred_class_vector_arr)
+        cosine_arr = np.apply_along_axis(apply_cosine.apply_method, 1, np.transpose(class_vector_arr, (1, 2, 0)))
+        cosine_arr = cosine_arr.T
+        cosine_df = pd.DataFrame(cosine_arr, columns=["similary"])
+        class_df = pd.DataFrame(class_arr, columns=["class"])
+        if cosine_df.shape[0] != class_df.shape[0]:
+            raise ValueError("debug")
+        class_df = class_df.reset_index()
+        cosine_df = cosine_df.reset_index()
+        class_df = pd.concat([class_df, cosine_df], axis=1)
+        class_df = class_df.dropna()
+        if class_df.shape[0] == 0:
+            raise ValueError("class_df rows == 0.")
+        class_df = class_df.drop_duplicates(["class"])
+        class_df = class_df.sort_values(by=["similary"], ascending=False)
+        print(" ".join([v for v in test_feature_arr.tolist()[0] if v is not None]))
+        for i in range(3):
+            if class_vector_arr[i][0].sum() == 0:
+                continue
+            max_sim_class = class_df.iloc[i]["class"]
+            print(" => " + str(max_sim_class))
 
 if __name__ == "__main__":
     import sys
