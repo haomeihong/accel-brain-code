@@ -62,30 +62,25 @@ def Main(document, dimention=10, batch_size=100):
         test_feature_vector_arr = feature_vector_arr[rand_index]
 
         pred_class_vector_arr = rnn_tensor_board_viz.predict(test_feature_vector_arr)
-        if pred_class_vector_arr[0][0].sum() == 0:
-            continue
+        def fratten_arr(value_arr):
+            return value_arr[0]
+        fratten_class_vector_arr = np.apply_along_axis(fratten_arr, 1, class_vector_arr)
 
-        apply_cosine = ApplyCosine(pred_class_vector_arr)
-        cosine_arr = np.apply_along_axis(apply_cosine.apply_method, 1, np.transpose(class_vector_arr, (1, 2, 0)))
-        cosine_arr = cosine_arr.T
-        cosine_df = pd.DataFrame(cosine_arr, columns=["similary"])
+        def cosine_similarity(value_arr):
+            return cosine(pred_class_vector_arr[0][0], value_arr)
+        cosine_arr = np.apply_along_axis(cosine_similarity, 1, fratten_class_vector_arr)
+
+        cosine_df = pd.DataFrame(cosine_arr, columns=["cosine"])
         class_df = pd.DataFrame(class_arr, columns=["class"])
-        if cosine_df.shape[0] != class_df.shape[0]:
-            raise ValueError("debug")
-        class_df = class_df.reset_index()
-        cosine_df = cosine_df.reset_index()
         class_df = pd.concat([class_df, cosine_df], axis=1)
         class_df = class_df.dropna()
-        if class_df.shape[0] == 0:
-            raise ValueError("class_df rows == 0.")
         class_df = class_df.drop_duplicates(["class"])
-        class_df = class_df.sort_values(by=["similary"], ascending=False)
-        print(" ".join([v for v in test_feature_arr.tolist()[0] if v is not None]))
-        for i in range(3):
-            if class_vector_arr[i][0].sum() == 0:
-                continue
-            max_sim_class = class_df.iloc[i]["class"]
-            print(" => " + str(max_sim_class))
+        class_df = class_df.sort_values(by=["cosine"], ascending=False)
+
+        input_str = "".join([v for v in test_feature_arr[0] if v is not None])
+        print(input_str)
+        for i in range(5):
+            print(" => " + class_df.iloc[i]["class"] + "(" + str(class_df.iloc[i]["cosine"]) + ")")
 
 if __name__ == "__main__":
     import sys

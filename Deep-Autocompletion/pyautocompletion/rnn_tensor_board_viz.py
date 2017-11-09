@@ -67,6 +67,7 @@ class RnnTensorBoardViz(metaclass=ABCMeta):
         class_num,
         cell_units_num,
         learning_rate=0.001,
+        dropout_prob=0.5,
         log_dir=None,
         name_scope_dict=None,
         scalar_summary_dict=None
@@ -80,6 +81,7 @@ class RnnTensorBoardViz(metaclass=ABCMeta):
             class_num:             Number of classes(labels).
             cell_units_num:        The number of units in the RNN cell.
             learning_rare:         Learning rate.
+            dropout_prob:          Probability of dropout.
             log_dir:               Logging directory for TensorBoard.
             name_scope_dict:       Naming conventions in TensorBoard's name scope.
             scalar_summary_dict:   Naming conventions in TensorBoard's scalar summary.
@@ -98,6 +100,9 @@ class RnnTensorBoardViz(metaclass=ABCMeta):
         
         if isinstance(learning_rate, float) is False:
             raise TypeError("The type of learning_rate must be float.")
+
+        if isinstance(dropout_prob, float) is False:
+            raise TypeError("The type of dropout_prob must be float.")
             
         if isinstance(log_dir, str) is False and log_dir is not None:
             raise TypeError("The type of log_dir must be str.")
@@ -121,6 +126,7 @@ class RnnTensorBoardViz(metaclass=ABCMeta):
         with tf.Graph().as_default():
             x, t = self.input_layer_pf(x_shape, t_shape)
             cell = self.build_rnn_cell(cell_units_num)
+            cell, keep_prob = self.setup_dropout(cell)
             outputs, states = self.construct_rnn(cell, x)
             w, b, logits, p = self.output_layer_var(cell_units_num, class_num, outputs)
             loss, opt_algo = self.optimizer_function(t, p, logits, learning_rate)
@@ -134,6 +140,8 @@ class RnnTensorBoardViz(metaclass=ABCMeta):
 
             self.x = x
             self.t = t
+            self.keep_prob = keep_prob
+            self.dropout_prob = dropout_prob
             self.p = p
             self.opt_algo = opt_algo
             self.loss = loss
@@ -176,6 +184,19 @@ class RnnTensorBoardViz(metaclass=ABCMeta):
             cell = rnn.BasicRNNCell(num_units=cell_units_num, activation=tf.nn.softsign)
         return cell
 
+    def setup_dropout(self, cell):
+        '''
+        Setup dropout.
+        
+        Args:
+            cell:    RNNCell
+        Returns:
+            RNNCell
+        '''
+        keep_prob = tf.placeholder(tf.float32, name=self.name_scope_dict["placeholder"] + "__keep_prob")
+        cell = tf.contrib.rnn.DropoutWrapper(cell, output_keep_prob=keep_prob)
+        return (cell, keep_prob)
+
     def construct_rnn(self, cell, x):
         with tf.name_scope(self.name_scope_dict["construct_rnn"]):
             outputs, states = tf.nn.dynamic_rnn(cell=cell, inputs=x, dtype=tf.float32, time_major=False)
@@ -198,9 +219,9 @@ class RnnTensorBoardViz(metaclass=ABCMeta):
 
     def optimizer_function(self, t, p, logits, learning_rate):
         with tf.name_scope(self.name_scope_dict["optimizer"]):
-            #cross_entropy = tf.nn.softmax_cross_entropy_with_logits(labels=t, logits=logits)
-            #loss = tf.reduce_mean(cross_entropy, name=self.name_scope_dict["optimizer"] + "__loss")
-            loss = tf.losses.cosine_distance(labels=tf.nn.l2_normalize(t, 2), predictions=tf.nn.l2_normalize(p, 2), dim=2)
+            cross_entropy = tf.nn.softmax_cross_entropy_with_logits(labels=t, logits=logits)
+            loss = tf.reduce_mean(cross_entropy, name=self.name_scope_dict["optimizer"] + "__loss")
+            #loss = tf.losses.cosine_distance(labels=tf.nn.l2_normalize(t, 2), predictions=tf.nn.l2_normalize(p, 2), dim=2)
             opt_algo = tf.train.AdamOptimizer(learning_rate).minimize(loss)
 
         return (loss, opt_algo)
@@ -236,5 +257,5 @@ class RnnTensorBoardViz(metaclass=ABCMeta):
                 self.__build_model()
                 self.__start_session()
 
-        pred_arr = self.sess.run(self.p, feed_dict={self.x: x_arr})
+        pred_arr = self.sess.run(self.p, feed_dict={self.x: x_arr, self.keep_prob: 1.0})
         return pred_arr

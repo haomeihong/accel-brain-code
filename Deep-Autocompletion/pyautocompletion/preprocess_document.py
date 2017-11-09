@@ -32,7 +32,7 @@ class PreprocessDocument(object):
         else:
             raise TypeError("The type of `word_vectorizable` must be `WordVectorizerable`.")
 
-    def preprocess(self, document, max_length=None):
+    def preprocess(self, document, max_length=None, repeated_padding_flag=False):
         '''
         Preprocess.
         
@@ -64,11 +64,20 @@ class PreprocessDocument(object):
         class_list = []
         for i in range(len(sentence_token_list)):
             while len(sentence_token_list[i]) < max_length:
-                sentence_token_list[i].append(None)
+                if repeated_padding_flag is False:
+                    sentence_token_list[i].append(None)
+                else:
+                    sentence_token_list[i].extend(sentence_token_list[i])
+                    if len(sentence_token_list[i]) > max_length:
+                        sentence_token_list[i] = sentence_token_list[i][:max_length]
             for j in range(2, len(sentence_token_list[i])):
                 if sentence_token_list[i][j] is not None:
                     feature_list = sentence_token_list[i][:j-1]
-                    feature_list.extend([None] * len(sentence_token_list[i][j-1:]))
+                    if repeated_padding_flag is False:
+                        feature_list.extend([None] * len(sentence_token_list[i][j-1:]))
+                    else:
+                        feature_list.extend(feature_list * len(sentence_token_list[i][j-1:]))
+                        feature_list = feature_list[:len(sentence_token_list[i])]
                     feature_list_list.append(feature_list)
                     class_list.append(sentence_token_list[i][j])
 

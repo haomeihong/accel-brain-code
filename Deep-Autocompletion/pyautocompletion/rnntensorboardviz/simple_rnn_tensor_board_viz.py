@@ -39,13 +39,14 @@ class SimpleRnnTensorBoardViz(RnnTensorBoardViz):
             rand_index = np.random.choice(self.train_x_arr.shape[0], size=batch_size)
             batch_x = self.train_x_arr[rand_index]
             batch_t = self.train_t_arr[rand_index]
-            self.sess.run(self.opt_algo, feed_dict={self.x: batch_x, self.t: batch_t})
+            self.sess.run(self.opt_algo, feed_dict={self.x: batch_x, self.t: batch_t, self.keep_prob: self.dropout_prob})
             if i % summary_freq == 0:
                 summary, loss, accuracy = self.sess.run(
                     [self.summary, self.loss, self.accuracy],
                     feed_dict={
                         self.x: self.test_x_arr,
-                        self.t: self.test_t_arr
+                        self.t: self.test_t_arr,
+                        self.keep_prob: self.dropout_prob
                     }
                 )
                 self.writer.add_summary(summary, i)
