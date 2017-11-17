@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from pysummarization.nlp_base import NlpBase
+from pysummarization.n_gram import Ngram
 from pyautocompletion.word_vectorizerable import WordVectorizerable
 import numpy as np
 
@@ -31,6 +32,26 @@ class PreprocessDocument(object):
             self.__word_vectorizable = word_vectorizable
         else:
             raise TypeError("The type of `word_vectorizable` must be `WordVectorizerable`.")
+
+    def preprocess_ngram(self, document, feature_num=2):
+        n_gram = Ngram()
+        self.__nlp_base.tokenize(document)
+        token_list = self.__nlp_base.token
+        token_tuple_zip = n_gram.generate_ngram_data_set(
+            token_list=token_list,
+            n=feature_num+1
+        )
+        n_gram_list = [np.array(token_tuple).tolist() for token_tuple in token_tuple_zip]
+        sentence_token_arr = np.array(n_gram_list)
+        feature_arr = sentence_token_arr[:, 0, :feature_num]
+        class_arr = sentence_token_arr[:, 0, -1]
+        self.__word_vectorizable.fit(sentence_token_arr)
+        class_arr = class_arr.reshape(-1, 1)
+        def vectorize(elm_list):
+            return self.__word_vectorizable.vectorize(elm_list)
+        feature_vector_arr = np.apply_along_axis(vectorize, 1, feature_arr)
+        class_vector_arr = np.apply_along_axis(vectorize, 1, class_arr)
+        return (feature_arr, class_arr, feature_vector_arr, class_vector_arr)
 
     def preprocess(self, document, max_length=None, repeated_padding_flag=False):
         '''

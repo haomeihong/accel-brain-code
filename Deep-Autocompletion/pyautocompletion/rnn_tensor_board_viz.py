@@ -130,11 +130,10 @@ class RnnTensorBoardViz(metaclass=ABCMeta):
             outputs, states = self.construct_rnn(cell, x)
             w, b, logits, p = self.output_layer_var(cell_units_num, class_num, outputs)
             loss, opt_algo = self.optimizer_function(t, p, logits, learning_rate)
-            accuracy, similarity = self.evaluator_function(p, t)
+            accuracy = self.evaluator_function(p, t)
 
             tf.summary.scalar(self.scalar_summary_dict["loss"], loss)
             tf.summary.scalar(self.scalar_summary_dict["accuracy"], accuracy)
-            tf.summary.scalar(self.scalar_summary_dict["similarity"], similarity)
             tf.summary.histogram(self.scalar_summary_dict["weights"], w)
             tf.summary.histogram(self.scalar_summary_dict["biases"], b)
 
@@ -146,7 +145,6 @@ class RnnTensorBoardViz(metaclass=ABCMeta):
             self.opt_algo = opt_algo
             self.loss = loss
             self.accuracy = accuracy
-            self.similarity = similarity
             self.__start_session()
 
     def __start_session(self):
@@ -234,10 +232,7 @@ class RnnTensorBoardViz(metaclass=ABCMeta):
         with tf.name_scope(self.name_scope_dict["evaluator"] + "__accuracy"):
             accuracy = tf.subtract(1.0, tf.divide(unexplained_error, total_error))
 
-        with tf.name_scope(self.name_scope_dict["evaluator"] + "__similarity"):
-            loss = tf.losses.cosine_distance(labels=tf.nn.l2_normalize(t, 2), predictions=tf.nn.l2_normalize(p, 2), dim=2)
-            similarity = 1 - loss
-        return (accuracy, similarity)
+        return accuracy
 
     @abstractmethod
     def session_run(self, training_num, batch_size, summary_freq):

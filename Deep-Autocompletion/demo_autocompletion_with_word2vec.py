@@ -8,7 +8,8 @@ from pyautocompletion.rnntensorboardviz.lstm_rnn_tensor_board_viz import LSTMRnn
 from pyautocompletion.rnntensorboardviz.lstmrnntensorboardviz.deep_lstm_rnn_tensor_board_viz import DeepLSTMRnnTensorBoardViz
 import numpy as np
 
-def Main(document, dimention=10, batch_size=100):
+
+def Main(document, dimention=10, batch_size=100, repeated_padding_flag=True):
     '''
     Entry Point.
     '''
@@ -24,15 +25,19 @@ def Main(document, dimention=10, batch_size=100):
         nlp_base=nlp_base,
         word_vectorizable=word_vectorizable
     )
-    feature_arr, class_arr, feature_vector_arr, class_vector_arr = preprocess_document.preprocess(document)
+    feature_arr, class_arr, feature_vector_arr, class_vector_arr = preprocess_document.preprocess(
+        document,
+        repeated_padding_flag=repeated_padding_flag
+    )
     rnn_tensor_board_viz = DeepLSTMRnnTensorBoardViz()
     rnn_tensor_board_viz.lstm_layers = 3
+    dimention = class_vector_arr.shape[2]
     rnn_tensor_board_viz.initialize(
         x_shape=(None, feature_vector_arr.shape[1], feature_vector_arr.shape[2]),
         t_shape=(None, class_vector_arr.shape[1], class_vector_arr.shape[2]),
         class_num=dimention,
-        learning_rate=0.0001,
-        cell_units_num=10,
+        learning_rate=0.0000001,
+        cell_units_num=dimention,
         log_dir="/tmp/tensorboard_lstm_rnn"
     )
     rnn_tensor_board_viz.preprocess(feature_vector_arr, class_vector_arr)
